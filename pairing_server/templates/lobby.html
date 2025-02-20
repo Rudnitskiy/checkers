@@ -15,7 +15,7 @@
             .then(data => {
               if(data.status === "paired"){
                 // Redirect to game_server with game_id and your username
-                window.location.href = "http://localhost:5001?game_id=" + data.game_id + "&player={{ username }}";
+                window.location.href = "http://95.174.95.217:5001?game_id=" + data.game_id + "&player={{ username }}";
               } else {
                 pollStatus();
               }
@@ -28,7 +28,7 @@
             .then(response => response.json())
             .then(data => {
               if(data.status === "paired"){
-                window.location.href = "http://localhost:5001?game_id=" + data.game_id + "&player={{ username }}";
+                window.location.href = "http://95.174.95.217:5001?game_id=" + data.game_id + "&player={{ username }}";
               } else {
                 pollStatus();
               }

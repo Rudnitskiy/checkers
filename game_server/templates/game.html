@@ -126,17 +126,17 @@
           if(!gameOver){
               socket.emit("resign", { "game_id": gameId });
           }
-          fetch("http://localhost:5000/reset", {
+          fetch("http://95.174.95.217:5000/reset", {
               method: "POST",
               credentials: "include"
           })
           .then(response => response.json())
           .then(data => {
-              window.location.href = "http://localhost:5000";
+              window.location.href = "http://95.174.95.217:5000";
           })
           .catch(err => {
               console.error("Error resetting pairing:", err);
-              window.location.href = "http://localhost:5000";
+              window.location.href = "http://95.174.95.217:5000";
           });
       });
     </script>
