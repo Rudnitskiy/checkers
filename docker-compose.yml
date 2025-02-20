@@ -3,12 +3,8 @@ services:
   pairing_server:
     build: ./pairing_server
     ports:
-      - "95.174.95.217:5000:5000"
-    environment:
-      - FLASK_ENV=production
+      - "5000:5000"
   game_server:
     build: ./game_server
     ports:
-      - "95.174.95.217:5001:5001"
-    environment:
-      - FLASK_ENV=production
+      - "5001:5001"
