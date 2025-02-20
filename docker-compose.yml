@@ -1,0 +1,10 @@
+version: "3"
+services:
+  pairing_server:
+    build: ./pairing_server
+    ports:
+      - "5000:5000"
+  game_server:
+    build: ./game_server
+    ports:
+      - "5001:5001"

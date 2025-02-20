@@ -1,0 +1,144 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Checkers Game</title>
+    <style>
+      table { border-collapse: collapse; }
+      td { width: 60px; height: 60px; text-align: center; vertical-align: middle; }
+      .dark { background-color: #769656; }
+      .light { background-color: #eeeed2; }
+      .selected { border: 3px solid red; }
+    </style>
+    <!-- Include Socket.IO from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.js"></script>
+  </head>
+  <body>
+    <h1>Checkers Game - Game ID: {{ game_id }}</h1>
+    <p>Your Color: <span id="yourColor"></span></p>
+    <p>Opponent: <span id="opponentName"></span></p>
+    <p id="turn">Turn: </p>
+    <button id="resignBtn">Resign</button>
+    <button id="returnBtn">Return to Lobby</button>
+    <div id="board"></div>
+    <script>
+      var socket = io();
+      var gameId = "{{ game_id }}";
+      var player = "{{ player }}";
+      var yourColor = "";
+      var selectedCell = null;
+      var boardState = [];
+      var gameOver = false;
+
+      socket.on("connect", function(){
+          socket.emit("join", { "game_id": gameId, "player": player });
+      });
+
+      socket.on("board_state", function(data){
+          boardState = data.board;
+          document.getElementById("turn").innerText = "Turn: " + data.turn;
+          if(data.your_color){
+              yourColor = data.your_color;
+              document.getElementById("yourColor").innerText = yourColor;
+          }
+          if(data.opponent){
+              document.getElementById("opponentName").innerText = data.opponent;
+          }
+          drawBoard();
+      });
+
+      socket.on("move_error", function(data){
+          alert(data.message);
+      });
+
+      socket.on("game_over", function(data){
+          gameOver = true;
+          document.getElementById("turn").innerText = "Game Over: Winner Is " + data.winner;
+          boardState = data.board;
+          if(data.opponent){
+              document.getElementById("opponentName").innerText = data.opponent;
+          }
+          drawBoard();
+      });
+
+      // Draw board so that player's side is at the bottom.
+      function drawBoard(){
+          var boardDiv = document.getElementById("board");
+          boardDiv.innerHTML = "";
+          var table = document.createElement("table");
+          for(var i = 0; i < 8; i++){
+              var tr = document.createElement("tr");
+              for(var j = 0; j < 8; j++){
+                  var boardRow = (yourColor === "black") ? 7 - i : i;
+                  var boardCol = (yourColor === "black") ? 7 - j : j;
+                  var td = document.createElement("td");
+                  td.dataset.row = boardRow;
+                  td.dataset.col = boardCol;
+                  td.className = ((boardRow + boardCol) % 2 === 0) ? "light" : "dark";
+                  if (((boardRow + boardCol) % 2 === 1) && !gameOver){
+                      td.addEventListener("click", (function(r, c){
+                          return function(){ cellClicked(r, c); };
+                      })(boardRow, boardCol));
+                  }
+                  var piece = boardState[boardRow][boardCol];
+                  if(piece){
+                      var symbol = (piece.color === "white") ? "&#9898;" : "&#9899;";
+                      if(piece.king){
+                          symbol += "K";
+                      }
+                      td.innerHTML = symbol;
+                  }
+                  tr.appendChild(td);
+              }
+              table.appendChild(tr);
+          }
+          boardDiv.appendChild(table);
+      }
+
+      function cellClicked(r, c){
+          if(gameOver) return;
+          if(!selectedCell){
+              var piece = boardState[r][c];
+              if(piece && piece.color === yourColor){
+                  selectedCell = { r: r, c: c };
+                  highlightSelected(r, c);
+              }
+          } else {
+              socket.emit("make_move", { "game_id": gameId, "from_row": selectedCell.r, "from_col": selectedCell.c, "to_row": r, "to_col": c });
+              selectedCell = null;
+          }
+      }
+
+      function highlightSelected(r, c){
+          drawBoard();
+          var cell = document.querySelector("td[data-row='" + r + "'][data-col='" + c + "']");
+          if(cell) {
+              cell.classList.add("selected");
+          }
+      }
+
+      document.getElementById("resignBtn").addEventListener("click", function(){
+          if(!gameOver){
+              socket.emit("resign", { "game_id": gameId });
+          }
+      });
+
+      document.getElementById("returnBtn").addEventListener("click", function(){
+          if(!gameOver){
+              socket.emit("resign", { "game_id": gameId });
+          }
+          fetch("http://localhost:5000/reset", {
+              method: "POST",
+              credentials: "include"
+          })
+          .then(response => response.json())
+          .then(data => {
+              window.location.href = "http://localhost:5000";
+          })
+          .catch(err => {
+              console.error("Error resetting pairing:", err);
+              window.location.href = "http://localhost:5000";
+          });
+      });
+    </script>
+  </body>
+</html>
